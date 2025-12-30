@@ -3,10 +3,21 @@ set -e
 
 DOMAIN="tamigoods.eu"
 GITHUB_TOKEN="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"
-GITHUB_USER="EdvardVolkov"
 REPO_NAME="Estony"
 
 echo "=== Настройка сервера для TamiGoods ==="
+
+# Получение GitHub пользователя через API
+echo "Получение информации о GitHub пользователе..."
+GITHUB_USER=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user | grep -o '"login":"[^"]*' | cut -d'"' -f4)
+
+if [ -z "$GITHUB_USER" ]; then
+    echo "Ошибка: Не удалось получить информацию о пользователе GitHub"
+    echo "Используем значение по умолчанию: EdvardVolkov"
+    GITHUB_USER="EdvardVolkov"
+else
+    echo "GitHub пользователь: $GITHUB_USER"
+fi
 
 # Установка Docker
 if ! command -v docker &> /dev/null; then
@@ -16,13 +27,23 @@ if ! command -v docker &> /dev/null; then
     systemctl start docker
     systemctl enable docker
     rm get-docker.sh
+else
+    echo "Docker уже установлен"
 fi
 
-# Установка Docker Compose
-if ! command -v docker-compose &> /dev/null; then
+# Установка Docker Compose (проверяем оба варианта: docker-compose и docker compose)
+if ! command -v docker-compose &> /dev/null && ! docker compose version &> /dev/null; then
     echo "Установка Docker Compose..."
-    curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-    chmod +x /usr/local/bin/docker-compose
+    # Пытаемся установить Docker Compose v2 (плагин)
+    if docker compose version &> /dev/null; then
+        echo "Docker Compose v2 уже доступен"
+    else
+        # Устанавливаем Docker Compose v1
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+    fi
+else
+    echo "Docker Compose уже установлен"
 fi
 
 # Установка Nginx
@@ -44,12 +65,12 @@ fi
 # Клонирование репозитория
 echo "Клонирование репозитория..."
 cd /root
-if [ -d "tamigoods" ]; then
-    cd tamigoods
-    git pull
+if [ -d "${REPO_NAME}" ]; then
+    cd ${REPO_NAME}
+    git pull || echo "Не удалось обновить репозиторий, продолжаем..."
 else
-    git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git" tamigoods
-    cd tamigoods
+    git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git" ${REPO_NAME}
+    cd ${REPO_NAME}
 fi
 
 # Создание nginx конфигурации
@@ -80,17 +101,38 @@ systemctl reload nginx
 
 # Сборка и запуск Docker контейнера
 echo "Сборка и запуск Docker контейнера..."
-cd /root/tamigoods
-docker-compose down || true
-docker-compose build --no-cache
-docker-compose up -d
+cd /root/${REPO_NAME}
+
+# Используем docker compose (v2) если доступен, иначе docker-compose (v1)
+if docker compose version &> /dev/null; then
+    echo "Используется Docker Compose v2"
+    DOCKER_COMPOSE_CMD="docker compose"
+else
+    echo "Используется Docker Compose v1"
+    DOCKER_COMPOSE_CMD="docker-compose"
+fi
+
+$DOCKER_COMPOSE_CMD down || true
+$DOCKER_COMPOSE_CMD build --no-cache
+$DOCKER_COMPOSE_CMD up -d
+
+# Ждем запуска контейнера
+echo "Ожидание запуска контейнера..."
+sleep 10
 
 # Настройка SSL
 echo "Настройка SSL сертификата..."
-certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos --email admin@${DOMAIN} --redirect || echo "SSL уже настроен или требуется ручная настройка"
+# Проверяем, не настроен ли уже SSL
+if [ ! -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ]; then
+    certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --agree-tos --email admin@${DOMAIN} --redirect
+else
+    echo "SSL сертификат уже существует, обновляем конфигурацию..."
+    certbot --nginx -d ${DOMAIN} -d www.${DOMAIN} --non-interactive --redirect
+fi
 
 echo "=== Настройка завершена! ==="
 echo "Приложение доступно по адресу: https://${DOMAIN}"
 docker ps
 systemctl status nginx --no-pager
+
 
