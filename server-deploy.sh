@@ -1,18 +1,10 @@
 #!/bin/bash
-
 set -e
 
-# Параметры
 DOMAIN="tamigoods.eu"
 GITHUB_TOKEN="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"
-GITHUB_USER=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user | grep -o '"login":"[^"]*' | cut -d'"' -f4)
-
-# Определение имени репозитория из текущей директории или из git remote
-if [ -d ".git" ]; then
-    REPO_NAME=$(basename $(git remote get-url origin 2>/dev/null | sed 's/.*\///' | sed 's/\.git$//') 2>/dev/null || echo "Estony")
-else
-    REPO_NAME="Estony"
-fi
+GITHUB_USER="EdvardVolkov"
+REPO_NAME="Estony"
 
 echo "=== Настройка сервера для TamiGoods ==="
 
@@ -62,24 +54,24 @@ fi
 
 # Создание nginx конфигурации
 echo "Настройка Nginx..."
-cat > /etc/nginx/sites-available/${DOMAIN} <<EOF
+cat > /etc/nginx/sites-available/${DOMAIN} <<'NGINX_EOF'
 server {
     listen 80;
-    server_name ${DOMAIN} www.${DOMAIN};
+    server_name tamigoods.eu www.tamigoods.eu;
 
     location / {
         proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_cache_bypass \$http_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
     }
 }
-EOF
+NGINX_EOF
 
 ln -sf /etc/nginx/sites-available/${DOMAIN} /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
