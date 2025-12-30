@@ -1,39 +1,90 @@
 #!/bin/bash
-set -e
 
-echo "=== Full TamiGoods deployment ==="
-echo ""
-echo "This script will:"
-echo "1. Push code to GitHub repository"
-echo "2. Connect to server and perform deployment"
-echo ""
+SERVER_IP="193.233.244.249"
+SERVER_USER="root"
+SERVER_PASSWORD="VTkc1YO2BZljqGd22Z"
+DOMAIN="tamigoods.eu"
+GITHUB_REPO="https://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@github.com/EdvardVolkov/TamiGoods.git"
 
-# First, push code to GitHub
-echo "=== Step 1: Pushing code to GitHub ==="
-chmod +x push-to-github.sh
-./push-to-github.sh
+echo "Начинаю деплой на сервер..."
 
-echo ""
-echo "=== Step 2: Connecting to server for deployment ==="
-echo "To complete deployment you need to:"
-echo "1. Connect to server: ssh root@193.233.244.249"
-echo "2. Run the command:"
-echo "   wget https://raw.githubusercontent.com/EdvardVolkov/Estony/main/server-deploy.sh && chmod +x server-deploy.sh && ./server-deploy.sh"
-echo ""
-echo "Or copy server-deploy.sh to the server and run it"
-echo ""
+sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'ENDSSH'
+# Обновление системы
+apt-get update -y
+apt-get upgrade -y
 
-read -p "Do you want to perform automatic deployment via SSH? (y/n) " -n 1 -r
-echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
-    SERVER_IP="193.233.244.249"
-    SERVER_USER="root"
-    
-    echo "Uploading deployment script to server..."
-    scp server-deploy.sh ${SERVER_USER}@${SERVER_IP}:/root/
-    
-    echo "Running deployment on server..."
-    ssh ${SERVER_USER}@${SERVER_IP} "chmod +x /root/server-deploy.sh && /root/server-deploy.sh"
+# Установка необходимых пакетов
+apt-get install -y docker.io docker-compose nginx certbot python3-certbot-nginx git sshpass
+
+# Запуск Docker
+systemctl start docker
+systemctl enable docker
+
+# Создание директории для приложения
+mkdir -p /opt/tamigoods
+cd /opt/tamigoods
+
+# Клонирование или обновление репозитория
+if [ -d ".git" ]; then
+    git pull
 else
-    echo "Manual deployment. Follow the instructions above."
+    git clone https://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@github.com/EdvardVolkov/TamiGoods.git .
 fi
+
+# Остановка и удаление старых контейнеров
+docker-compose down || true
+docker-compose build --no-cache
+
+# Запуск контейнера
+docker-compose up -d
+
+# Ожидание запуска контейнера
+sleep 10
+
+ENDSSH
+
+echo "Настройка nginx и SSL..."
+
+sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
+# Создание конфигурации nginx
+cat > /etc/nginx/sites-available/tamigoods << 'NGINXCONF'
+server {
+    listen 80;
+    server_name tamigoods.eu www.tamigoods.eu;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+    }
+}
+NGINXCONF
+
+# Активация конфигурации
+ln -sf /etc/nginx/sites-available/tamigoods /etc/nginx/sites-enabled/
+rm -f /etc/nginx/sites-enabled/default
+
+# Проверка конфигурации nginx
+nginx -t
+
+# Перезагрузка nginx
+systemctl restart nginx
+systemctl enable nginx
+
+# Получение SSL сертификата
+certbot --nginx -d tamigoods.eu -d www.tamigoods.eu --non-interactive --agree-tos --email admin@tamigoods.eu --redirect
+
+# Настройка автообновления сертификата
+systemctl enable certbot.timer
+systemctl start certbot.timer
+
+ENDSSH
+
+echo "Деплой завершен!"
+
