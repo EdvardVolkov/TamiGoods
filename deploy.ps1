@@ -1,6 +1,5 @@
 $SERVER_IP = "193.233.244.249"
 $SERVER_USER = "root"
-$SERVER_PASSWORD = "VTkc1YO2BZljqGd22Z"
 $DOMAIN = "tamigoods.eu"
 
 Write-Host "Начинаю деплой на сервер..."
@@ -17,7 +16,7 @@ cd /opt/tamigoods
 if [ -d ".git" ]; then
     git pull
 else
-    git clone https://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@github.com/EdvardVolkov/TamiGoods.git .
+    git clone https://github.com/EdvardVolkov/TamiGoods.git .
 fi
 docker-compose down || true
 docker-compose build --no-cache
@@ -25,7 +24,7 @@ docker-compose up -d
 sleep 10
 "@
 
-$commands | sshpass -p "$SERVER_PASSWORD ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP bash
+$commands | ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP bash
 
 Write-Host "Настройка nginx..."
 
@@ -62,7 +61,7 @@ systemctl enable certbot.timer
 systemctl start certbot.timer
 "@
 
-$nginxCommands | sshpass -p "$SERVER_PASSWORD ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP bash
+$nginxCommands | ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP bash
 
 Write-Host "Деплой завершен!"
 

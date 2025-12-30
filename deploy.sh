@@ -2,13 +2,12 @@
 
 SERVER_IP="193.233.244.249"
 SERVER_USER="root"
-SERVER_PASSWORD="VTkc1YO2BZljqGd22Z"
 DOMAIN="tamigoods.eu"
-GITHUB_REPO="https://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@github.com/EdvardVolkov/TamiGoods.git"
+GITHUB_REPO="https://github.com/EdvardVolkov/TamiGoods.git"
 
 echo "Начинаю деплой на сервер..."
 
-sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'ENDSSH'
+ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'ENDSSH'
 # Обновление системы
 apt-get update -y
 apt-get upgrade -y
@@ -28,7 +27,7 @@ cd /opt/tamigoods
 if [ -d ".git" ]; then
     git pull
 else
-    git clone https://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@github.com/EdvardVolkov/TamiGoods.git .
+    git clone https://github.com/EdvardVolkov/TamiGoods.git .
 fi
 
 # Остановка и удаление старых контейнеров
@@ -45,7 +44,7 @@ ENDSSH
 
 echo "Настройка nginx и SSL..."
 
-sshpass -p "$SERVER_PASSWORD" ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
+ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << ENDSSH
 # Создание конфигурации nginx
 cat > /etc/nginx/sites-available/tamigoods << 'NGINXCONF'
 server {
