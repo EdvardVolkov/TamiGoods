@@ -1,51 +1,50 @@
 #!/bin/bash
 set -e
 
-# Токен должен быть установлен через переменную окружения
+# Token must be set via environment variable
 if [ -z "$GITHUB_TOKEN" ]; then
-    echo "Ошибка: GITHUB_TOKEN не установлен!"
-    echo "Установите переменную окружения перед запуском скрипта:"
+    echo "Error: GITHUB_TOKEN is not set!"
+    echo "Set the environment variable before running the script:"
     echo "  export GITHUB_TOKEN=\"your_token_here\""
     echo "  ./push-to-github.sh"
     exit 1
 fi
 
-echo "=== Получение информации о GitHub пользователе ==="
+echo "=== Getting GitHub user information ==="
 USER_INFO=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user)
 GITHUB_USER=$(echo $USER_INFO | grep -o '"login":"[^"]*' | cut -d'"' -f4)
 
 if [ -z "$GITHUB_USER" ]; then
-    echo "Ошибка: Не удалось получить информацию о пользователе GitHub"
+    echo "Error: Failed to get GitHub user information"
     exit 1
 fi
 
-echo "GitHub пользователь: $GITHUB_USER"
+echo "GitHub user: $GITHUB_USER"
 
 REPO_NAME="Estony"
 REMOTE_URL="https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/${REPO_NAME}.git"
 
-echo "=== Настройка Git ==="
+echo "=== Configuring Git ==="
 git config user.name "${GITHUB_USER}"
 git config user.email "${GITHUB_USER}@users.noreply.github.com"
 
-echo "=== Добавление удаленного репозитория ==="
+echo "=== Adding remote repository ==="
 if git remote get-url origin &> /dev/null; then
     git remote set-url origin "${REMOTE_URL}"
 else
     git remote add origin "${REMOTE_URL}"
 fi
 
-echo "=== Проверка статуса Git ==="
+echo "=== Checking Git status ==="
 git status
 
-echo "=== Добавление всех изменений ==="
+echo "=== Adding all changes ==="
 git add .
 
-echo "=== Создание коммита ==="
-git commit -m "Deploy: Docker setup with nginx and SSL" || echo "Нет изменений для коммита"
+echo "=== Creating commit ==="
+git commit -m "Deploy: Docker setup with nginx and SSL" || echo "No changes to commit"
 
-echo "=== Push в GitHub ==="
-git push -u origin main || git push -u origin master || echo "Возможно, ветка уже запушена"
+echo "=== Pushing to GitHub ==="
+git push -u origin main || git push -u origin master || echo "Branch might already be pushed"
 
-echo "=== Готово! Репозиторий обновлен на GitHub ==="
-
+echo "=== Done! Repository updated on GitHub ==="
