@@ -20,10 +20,9 @@ export default function Logo({ className = "w-12 h-12", showText = false, textCl
           className="w-full h-full object-contain"
           style={{
             imageRendering: 'auto',
-            WebkitImageRendering: 'auto',
             display: 'block',
             verticalAlign: 'middle',
-          }}
+          } as React.CSSProperties}
         />
       </div>
 
