@@ -2,8 +2,11 @@
 set -e
 
 DOMAIN="tamigoods.eu"
-GITHUB_TOKEN="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"
+GITHUB_TOKEN="${GITHUB_TOKEN:-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}"
 REPO_NAME="Estony"
+
+# Предупреждение: токен должен быть установлен через переменную окружения в production
+# export GITHUB_TOKEN="your_token_here"
 
 echo "=== Настройка сервера для TamiGoods ==="
 

@@ -25,7 +25,11 @@ chmod +x push-to-github.sh
 
 Или вручную:
 ```bash
-git remote add origin https://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@github.com/USERNAME/Estony.git
+# Установите токен GitHub как переменную окружения
+export GITHUB_TOKEN="your_token_here"
+
+# Добавьте remote и выполните push
+git remote add origin https://${GITHUB_TOKEN}@github.com/USERNAME/Estony.git
 git push -u origin main
 ```
 

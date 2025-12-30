@@ -4,7 +4,8 @@ set -e
 
 # Параметры
 DOMAIN="tamigoods.eu"
-GITHUB_TOKEN="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"
+# GITHUB_TOKEN должен быть установлен через переменную окружения
+GITHUB_TOKEN="${GITHUB_TOKEN:-your_token_here}"
 GITHUB_USER=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/user | grep -o '"login":"[^"]*' | cut -d'"' -f4)
 
 # Определение имени репозитория из текущей директории или из git remote

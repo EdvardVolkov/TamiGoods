@@ -7,7 +7,14 @@ $SERVER_IP = "193.233.244.249"
 $SERVER_USER = "root"
 $SERVER_PASSWORD = "VTkc1YO2BZljqGd22Z"
 $DOMAIN = "tamigoods.eu"
-$GITHUB_TOKEN = "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"
+# Токен должен быть установлен через переменную окружения
+# $env:GITHUB_TOKEN = "your_token_here"
+$GITHUB_TOKEN = $env:GITHUB_TOKEN
+if (-not $GITHUB_TOKEN) {
+    Write-Host "Ошибка: GITHUB_TOKEN не установлен. Установите переменную окружения:" -ForegroundColor Red
+    Write-Host '$env:GITHUB_TOKEN = "your_token_here"' -ForegroundColor Yellow
+    exit 1
+}
 
 Write-Host "=== Начало деплоя TamiGoods ===" -ForegroundColor Green
 

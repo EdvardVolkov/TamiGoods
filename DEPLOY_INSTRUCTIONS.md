@@ -7,7 +7,11 @@
 ## Шаг 2: Push кода в GitHub
 
 ```bash
-git remote add origin https://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@github.com/EdvardVolkov/Estony.git
+# Установите токен GitHub как переменную окружения
+export GITHUB_TOKEN="your_token_here"
+
+# Добавьте remote и выполните push
+git remote add origin https://${GITHUB_TOKEN}@github.com/USERNAME/Estony.git
 git branch -M main
 git push -u origin main
 ```
@@ -45,7 +49,9 @@ apt-get install -y certbot python3-certbot-nginx
 
 # Клонирование репозитория
 cd /root
-git clone https://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@github.com/EdvardVolkov/Estony.git tamigoods
+# Установите переменную окружения GITHUB_TOKEN перед клонированием
+export GITHUB_TOKEN="your_token_here"
+git clone https://${GITHUB_TOKEN}@github.com/USERNAME/Estony.git tamigoods
 cd tamigoods
 
 # Настройка Nginx

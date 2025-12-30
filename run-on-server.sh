@@ -43,7 +43,9 @@ if [ -d "tamigoods" ]; then
     cd tamigoods
     git pull
 else
-    git clone https://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@github.com/EdvardVolkov/Estony.git tamigoods
+    # GITHUB_TOKEN должен быть установлен через переменную окружения
+    GITHUB_TOKEN="${GITHUB_TOKEN:-your_token_here}"
+    git clone "https://${GITHUB_TOKEN}@github.com/${GITHUB_USER}/Estony.git" tamigoods
     cd tamigoods
 fi
 
