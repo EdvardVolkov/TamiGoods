@@ -2,12 +2,11 @@
 set -e
 
 # Токен должен быть установлен через переменную окружения
-# export GITHUB_TOKEN="your_token_here"
-GITHUB_TOKEN="${GITHUB_TOKEN:-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}"
-
-if [ -z "$GITHUB_TOKEN" ] || [ "$GITHUB_TOKEN" = "your_token_here" ]; then
-    echo "Ошибка: GITHUB_TOKEN не установлен. Установите переменную окружения:"
-    echo "export GITHUB_TOKEN=\"your_token_here\""
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "Ошибка: GITHUB_TOKEN не установлен!"
+    echo "Установите переменную окружения перед запуском скрипта:"
+    echo "  export GITHUB_TOKEN=\"your_token_here\""
+    echo "  ./push-to-github.sh"
     exit 1
 fi
 

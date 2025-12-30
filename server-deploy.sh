@@ -2,11 +2,16 @@
 set -e
 
 DOMAIN="tamigoods.eu"
-GITHUB_TOKEN="${GITHUB_TOKEN:-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}"
 REPO_NAME="Estony"
 
-# Предупреждение: токен должен быть установлен через переменную окружения в production
-# export GITHUB_TOKEN="your_token_here"
+# Проверка наличия GitHub токена
+if [ -z "$GITHUB_TOKEN" ]; then
+    echo "Ошибка: GITHUB_TOKEN не установлен!"
+    echo "Установите переменную окружения перед запуском скрипта:"
+    echo "  export GITHUB_TOKEN=\"your_token_here\""
+    echo "  ./server-deploy.sh"
+    exit 1
+fi
 
 echo "=== Настройка сервера для TamiGoods ==="
 
